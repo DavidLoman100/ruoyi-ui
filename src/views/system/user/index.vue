@@ -16,15 +16,15 @@
         <!--用户数据-->
         <pane size="84">
           <el-col>
-            <el-form :model="queryParams" ref="queryForm" size="small" :inline="true" v-show="showSearch" label-width="68px">
+            <el-form :model="pageQryUserData" ref="queryForm" size="small" :inline="true" v-show="showSearch" label-width="68px">
               <el-form-item label="用户名称" prop="userName">
-                <el-input v-model="queryParams.userName" placeholder="请输入用户名称" clearable style="width: 240px" @keyup.enter.native="handleQuery" />
+                <el-input v-model="pageQryUserData.userName" placeholder="请输入用户名称" clearable style="width: 240px" @keyup.enter.native="handleQuery" />
               </el-form-item>
               <el-form-item label="手机号码" prop="phonenumber">
-                <el-input v-model="queryParams.phonenumber" placeholder="请输入手机号码" clearable style="width: 240px" @keyup.enter.native="handleQuery" />
+                <el-input v-model="pageQryUserData.phonenumber" placeholder="请输入手机号码" clearable style="width: 240px" @keyup.enter.native="handleQuery" />
               </el-form-item>
               <el-form-item label="状态" prop="status">
-                <el-select v-model="queryParams.status" placeholder="用户状态" clearable style="width: 240px">
+                <el-select v-model="pageQryUserData.status" placeholder="用户状态" clearable style="width: 240px">
                   <el-option v-for="dict in dict.type.sys_normal_disable" :key="dict.value" :label="dict.label" :value="dict.value" />
                 </el-select>
               </el-form-item>
@@ -88,7 +88,7 @@
               </el-table-column>
             </el-table>
 
-            <pagination v-show="total > 0" :total="total" :page.sync="queryParams.pageNum" :limit.sync="queryParams.pageSize" @pagination="getList" />
+            <pagination v-show="total > 0" :total="total" :page.sync="pageQryUserData.pageNum" :limit.sync="pageQryUserData.pageSize" @pagination="getList" />
           </el-col>
         </pane>
       </splitpanes>
@@ -201,7 +201,7 @@
 </template>
 
 <script>
-import { listUser, getUser, delUser, addUser, updateUser, resetUserPwd, changeUserStatus, deptTreeSelect } from "@/api/system/user";
+import { pageQryUser, getUser, delUser, addUser, updateUser, resetUserPwd, changeUserStatus, deptTreeSelect } from "@/api/system/user";
 import { getToken } from "@/utils/auth";
 import Treeselect from "@riophae/vue-treeselect";
 import "@riophae/vue-treeselect/dist/vue-treeselect.css";
@@ -268,7 +268,15 @@ export default {
         url: process.env.VUE_APP_BASE_API + "/system/user/importData"
       },
       // 查询参数
-      queryParams: {
+      pageQryUserData: {
+        pageNum: 1,
+        pageSize: 10,
+        userName: undefined,
+        phonenumber: undefined,
+        status: undefined,
+        deptId: undefined
+      },
+      pageQryUserData: {
         pageNum: 1,
         pageSize: 10,
         userName: undefined,
@@ -334,12 +342,13 @@ export default {
     /** 查询用户列表 */
     getList() {
       this.loading = true;
-      listUser(this.addDateRange(this.queryParams, this.dateRange)).then(response => {
-          this.userList = response.rows;
-          this.total = response.total;
+      pageQryUser(this.pageQryUserData).then(response => {
+          this.userList = response.data.list;
+          this.total = response.data.total;
           this.loading = false;
         }
       );
+
     },
     /** 查询部门下拉树结构 */
     getDeptTree() {
@@ -367,7 +376,7 @@ export default {
     },
     // 节点单击事件
     handleNodeClick(data) {
-      this.queryParams.deptId = data.id;
+      this.pageQryUserData.deptId = data.id;
       this.handleQuery();
     },
     // 用户状态修改
@@ -406,14 +415,14 @@ export default {
     },
     /** 搜索按钮操作 */
     handleQuery() {
-      this.queryParams.pageNum = 1;
+      this.pageQryUserData.pageNum = 1;
       this.getList();
     },
     /** 重置按钮操作 */
     resetQuery() {
       this.dateRange = [];
       this.resetForm("queryForm");
-      this.queryParams.deptId = undefined;
+      this.pageQryUserData.deptId = undefined;
       this.$refs.tree.setCurrentKey(null);
       this.handleQuery();
     },
@@ -519,7 +528,7 @@ export default {
     /** 导出按钮操作 */
     handleExport() {
       this.download('system/user/export', {
-        ...this.queryParams
+        ...this.pageQryUserData
       }, `user_${new Date().getTime()}.xlsx`)
     },
     /** 导入按钮操作 */

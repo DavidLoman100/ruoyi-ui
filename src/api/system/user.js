@@ -1,12 +1,12 @@
 import request from '@/utils/request'
 import { parseStrEmpty } from "@/utils/ruoyi";
 
-// 查询用户列表
-export function listUser(query) {
+//分页查询用户列表
+export function pageQryUser(data) {
   return request({
-    url: '/system/user/list',
-    method: 'get',
-    params: query
+    url: '/system/user/pageQrySysUser',
+    method: 'post',
+    data: data
   })
 }
 
