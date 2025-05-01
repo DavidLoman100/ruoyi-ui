@@ -166,6 +166,7 @@ export function handleTree(data, id, parentId, children) {
   var tree = [];
   for (let d of data) {
     let id = d[config.id];
+    d[config.childrenList] = []; //初始化子数组字段 如children
     childrenListMap[id] = d;
   }
 
