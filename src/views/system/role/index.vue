@@ -253,7 +253,7 @@
 
 <script>
 import { listRole, getRole, delRole, addRole, updateRole, dataScope, changeRoleStatus, deptTreeSelect } from "@/api/system/role";
-import { treeselect as menuTreeselect, roleMenuTreeselect } from "@/api/system/menu";
+import { getMenuTree , roleMenuTreeselect } from "@/api/system/menu";
 
 export default {
   name: "Role",
@@ -310,7 +310,24 @@ export default {
         }
       ],
       // 菜单列表
-      menuOptions: [],
+      menuOptions: [
+      {
+          id: 1,
+          label: "一级菜单",
+          children: [
+            {
+              id: 2,
+              label: "二级菜单",
+              children: [
+                {
+                  id: 3,
+                  label: "三级菜单"
+                }
+              ]
+            }
+          ]
+        }
+      ],
       // 部门列表
       deptOptions: [],
       // 查询参数
@@ -357,8 +374,16 @@ export default {
     },
     /** 查询菜单树结构 */
     getMenuTreeselect() {
-      menuTreeselect().then(response => {
-        this.menuOptions = response.data;
+      getMenuTree({}).then(response => {
+        const convertTree = (menuList) => {
+          return menuList.map(menu => ({
+            id: menu.menuId,
+            label: menu.menuName,
+            children: menu.children ? convertTree(menu.children) : []
+          }));
+        };
+        this.menuOptions = convertTree(response.data);
+        console.log(this.menuOptions);
       });
     },
     // 所有菜单节点数据
