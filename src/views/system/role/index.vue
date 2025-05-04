@@ -253,7 +253,7 @@
 
 <script>
 import { listRole, getRole, delRole, addRole, updateRole, dataScope, changeRoleStatus, deptTreeSelect } from "@/api/system/role";
-import { getMenuTree , roleMenuTreeselect } from "@/api/system/menu";
+import { getMenuTree , getMenuTreeByRole } from "@/api/system/menu";
 
 export default {
   name: "Role",
@@ -310,24 +310,7 @@ export default {
         }
       ],
       // 菜单列表
-      menuOptions: [
-      {
-          id: 1,
-          label: "一级菜单",
-          children: [
-            {
-              id: 2,
-              label: "二级菜单",
-              children: [
-                {
-                  id: 3,
-                  label: "三级菜单"
-                }
-              ]
-            }
-          ]
-        }
-      ],
+      menuOptions: [],
       // 部门列表
       deptOptions: [],
       // 查询参数
@@ -405,9 +388,16 @@ export default {
       return checkedKeys;
     },
     /** 根据角色ID查询菜单树结构 */
-    getRoleMenuTreeselect(roleId) {
-      return roleMenuTreeselect(roleId).then(response => {
-        this.menuOptions = response.menus;
+    getMenuTreeByRole(roleId) {
+      return getMenuTreeByRole(roleId).then(response => {
+        const convertTree = (menuList) => {
+          return menuList.map(menu => ({
+            id: menu.menuId,
+            label: menu.menuName,
+            children: menu.children ? convertTree(menu.children) : []
+          }));
+        };
+        this.menuOptions = convertTree(response.data.menuTree);
         return response;
       });
     },
@@ -533,17 +523,24 @@ export default {
     handleUpdate(row) {
       this.reset();
       const roleId = row.roleId || this.ids
-      const roleMenu = this.getRoleMenuTreeselect(roleId);
+      const menuTreeData = this.getMenuTreeByRole(roleId);
       getRole(roleId).then(response => {
         this.form = response.data;
         this.open = true;
         this.$nextTick(() => {
-          roleMenu.then(res => {
-            let checkedKeys = res.checkedKeys
+          menuTreeData.then(res => {
+            let checkedKeys = res.data.menuIds
             checkedKeys.forEach((v) => {
-                this.$nextTick(()=>{
-                    this.$refs.menu.setChecked(v, true ,false);
-                })
+              this.$nextTick(() => {
+                this.$refs.menu.setChecked(v, true, false);
+                /**
+                  v：要勾选的节点的 key（即 node-key 的值，一般是菜单 ID）。
+                  true：表示要将该节点设置为勾选状态（false 就是取消勾选）。
+                  false：是否需要联动父子节点的选中状态：
+                    true：会联动，即设置这个节点选中/取消时，父节点或子节点也会跟着一起变化；
+                    false：不联动，只设置当前这个节点的选中状态，不影响它的父节点或子节点。
+                 */
+              })
             })
           });
         });

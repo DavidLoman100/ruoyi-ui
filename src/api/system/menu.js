@@ -17,7 +17,7 @@ export function getMenu(menuId) {
   })
 }
 
-// 查询菜单下拉树结构
+// 查询菜单树
 export function getMenuTree(data) {
   return request({
     url: '/system/menu/tree/list',
@@ -26,10 +26,10 @@ export function getMenuTree(data) {
   })
 }
 
-// 根据角色ID查询菜单下拉树结构
-export function roleMenuTreeselect(roleId) {
+// 菜单树 和 角色关联的菜单id
+export function getMenuTreeByRole(roleId) {
   return request({
-    url: '/system/menu/roleMenuTreeselect/' + roleId,
+    url: '/system/menu/tree/' + roleId,
     method: 'get'
   })
 }
