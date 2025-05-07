@@ -185,8 +185,8 @@
                 是否外链
               </span>
               <el-radio-group v-model="form.isFrame">
-                <el-radio :label=0>是</el-radio>
-                <el-radio :label=1>否</el-radio>
+                <el-radio :label=1>是</el-radio>
+                <el-radio :label=0>否</el-radio>
               </el-radio-group>
             </el-form-item>
           </el-col>
