@@ -185,8 +185,8 @@
                 是否外链
               </span>
               <el-radio-group v-model="form.isFrame">
-                <el-radio label="0">是</el-radio>
-                <el-radio label="1">否</el-radio>
+                <el-radio :label=0>是</el-radio>
+                <el-radio :label=1>否</el-radio>
               </el-radio-group>
             </el-form-item>
           </el-col>
@@ -359,7 +359,6 @@ export default {
     getList() {
       this.loading = true;
       qryMenu(this.queryParams).then(response => {
-        this.userList = response.data;
         this.menuList = this.handleTree(response.data, "menuId");
         this.loading = false;
       });
@@ -398,7 +397,7 @@ export default {
         icon: undefined,
         menuType: "M",
         orderNum: undefined,
-        isFrame: "1",
+        isFrame: 1,
         isCache: "0",
         visible: "0",
         status: "0"
