@@ -252,7 +252,7 @@
 </template>
 
 <script>
-import { listRole, getRole, delRole, addRole, updateRole, dataScope, changeRoleStatus, deptTreeSelect } from "@/api/system/role";
+import { pageQryRole, getRole, delRole, addRole, updateRole, dataScope, changeRoleStatus, deptTreeSelect } from "@/api/system/role";
 import { getMenuTree , getMenuTreeByRole } from "@/api/system/menu";
 
 export default {
@@ -346,11 +346,21 @@ export default {
   },
   methods: {
     /** 查询角色列表 */
+    // getList() {
+    //   this.loading = true;
+    //   pageQryRole(this.addDateRange(this.queryParams, this.dateRange)).then(response => {
+    //       this.roleList = response.rows;
+    //       this.total = response.total;
+    //       this.loading = false;
+    //     }
+    //   );
+    // },
+
     getList() {
       this.loading = true;
-      listRole(this.addDateRange(this.queryParams, this.dateRange)).then(response => {
-          this.roleList = response.rows;
-          this.total = response.total;
+      pageQryRole(this.queryParams).then(response => {
+          this.roleList = response.data.list;
+          this.total = response.data.total;
           this.loading = false;
         }
       );
