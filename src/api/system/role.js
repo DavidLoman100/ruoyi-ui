@@ -1,6 +1,6 @@
 import request from '@/utils/request'
 
-// // 查询角色列表
+
 // export function pageQryRole(query) {
 //   return request({
 //     url: '/system/role/list',
@@ -9,6 +9,7 @@ import request from '@/utils/request'
 //   })
 // }
 
+// 查询角色列表
 export function pageQryRole(data) {
   return request({
     url: '/system/role/page/list',
@@ -28,7 +29,7 @@ export function getRole(roleId) {
 // 新增角色
 export function addRole(data) {
   return request({
-    url: '/system/role',
+    url: '/system/role/add',
     method: 'post',
     data: data
   })
@@ -37,7 +38,7 @@ export function addRole(data) {
 // 修改角色
 export function updateRole(data) {
   return request({
-    url: '/system/role',
+    url: '/system/role/edit',
     method: 'put',
     data: data
   })
