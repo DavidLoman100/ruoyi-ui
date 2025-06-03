@@ -47,7 +47,7 @@ export function updateRole(data) {
 // 角色数据权限
 export function dataScope(data) {
   return request({
-    url: '/system/role/dataScope',
+    url: '/system/role/updDataScope',
     method: 'put',
     data: data
   })
@@ -69,7 +69,7 @@ export function changeRoleStatus(roleId, status) {
 // 删除角色
 export function delRole(roleId) {
   return request({
-    url: '/system/role/' + roleId,
+    url: '/system/role/del/' + roleId,
     method: 'delete'
   })
 }
