@@ -57,7 +57,7 @@
 </template>
 
 <script>
-import { unallocatedUserList, authUserSelectAll } from "@/api/system/role";
+import { pageQryUserRole, authUserSelectAll } from "@/api/system/role";
 export default {
   dicts: ['sys_normal_disable'],
   props: {
@@ -80,6 +80,7 @@ export default {
       queryParams: {
         pageNum: 1,
         pageSize: 10,
+        isAllocatedUser: undefined,
         roleId: undefined,
         userName: undefined,
         phonenumber: undefined
@@ -102,9 +103,10 @@ export default {
     },
     // 查询表数据
     getList() {
-      unallocatedUserList(this.queryParams).then(res => {
-        this.userList = res.rows;
-        this.total = res.total;
+      this.queryParams.isAllocatedUser = false;
+      pageQryUserRole(this.queryParams).then(res => {
+        this.userList = res.data.list;
+        this.total = res.data.total;
       });
     },
     /** 搜索按钮操作 */

@@ -83,12 +83,12 @@ export function allocatedUserList(query) {
   })
 }
 
-// 查询角色未授权用户列表
-export function unallocatedUserList(query) {
+// 查询角色的用户列表 (已授权/未授权)
+export function pageQryUserRole(data) {
   return request({
-    url: '/system/role/authUser/unallocatedList',
-    method: 'get',
-    params: query
+    url: '/system/user/role/page/list',
+    method: 'post',
+    data: data
   })
 }
 
