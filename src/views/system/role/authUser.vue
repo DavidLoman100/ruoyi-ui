@@ -100,7 +100,7 @@
 </template>
 
 <script>
-import { pageQryUserRole, authUserCancel, authUserCancelAll } from "@/api/system/role";
+import { pageQryUserRole, revokeAuthUser } from "@/api/system/role";
 import selectUser from "./selectUser";
 
 export default {
@@ -129,7 +129,11 @@ export default {
         roleId: undefined,
         userName: undefined,
         phonenumber: undefined
-      }
+      },
+      revokeAuthParams: {
+        roleId: undefined,
+        userIds: []
+      },
     };
   },
   created() {
@@ -178,21 +182,25 @@ export default {
     /** 取消授权按钮操作 */
     cancelAuthUser(row) {
       const roleId = this.queryParams.roleId;
-      this.$modal.confirm('确认要取消该用户"' + row.userName + '"角色吗？').then(function() {
-        return authUserCancel({ userId: row.userId, roleId: roleId });
+      this.$modal.confirm('确认要取消该用户"' + row.userName + '"角色吗？').then(() => {
+        this.revokeAuthParams.roleId = this.queryParams.roleId;
+        this.revokeAuthParams.userIds = [row.userId];
+        return revokeAuthUser(this.revokeAuthParams);
       }).then(() => {
         this.getList();
+        this.revokeAuthParams.userIds = [];
         this.$modal.msgSuccess("取消授权成功");
       }).catch(() => {});
     },
     /** 批量取消授权按钮操作 */
     cancelAuthUserAll(row) {
-      const roleId = this.queryParams.roleId;
-      const userIds = this.userIds.join(",");
-      this.$modal.confirm('是否取消选中用户授权数据项？').then(function() {
-        return authUserCancelAll({ roleId: roleId, userIds: userIds });
+      this.$modal.confirm('是否取消选中用户授权数据项？').then(() => {
+        this.revokeAuthParams.roleId = this.queryParams.roleId;
+        this.revokeAuthParams.userIds = this.userIds;
+        return revokeAuthUser(this.revokeAuthParams);
       }).then(() => {
         this.getList();
+        this.revokeAuthParams.userIds = [];
         this.$modal.msgSuccess("取消授权成功");
       }).catch(() => {});
     }

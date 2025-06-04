@@ -57,7 +57,7 @@
 </template>
 
 <script>
-import { pageQryUserRole, authUserSelectAll } from "@/api/system/role";
+import { pageQryUserRole, roleAuthUser } from "@/api/system/role";
 export default {
   dicts: ['sys_normal_disable'],
   props: {
@@ -84,6 +84,10 @@ export default {
         roleId: undefined,
         userName: undefined,
         phonenumber: undefined
+      },
+      roleAuthUserParams: {
+        roleId: undefined,
+        userIds: []
       }
     };
   },
@@ -121,13 +125,13 @@ export default {
     },
     /** 选择授权用户操作 */
     handleSelectUser() {
-      const roleId = this.queryParams.roleId;
-      const userIds = this.userIds.join(",");
-      if (userIds == "") {
+      if (this.userIds == []) {
         this.$modal.msgError("请选择要分配的用户");
         return;
       }
-      authUserSelectAll({ roleId: roleId, userIds: userIds }).then(res => {
+      this.roleAuthUserParams.roleId = this.queryParams.roleId;
+      this.roleAuthUserParams.userIds = this.userIds;
+      roleAuthUser(this.roleAuthUserParams).then(res => {
         this.$modal.msgSuccess(res.msg);
         this.visible = false;
         this.$emit("ok");

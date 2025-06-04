@@ -92,30 +92,22 @@ export function pageQryUserRole(data) {
   })
 }
 
-// 取消用户授权角色
-export function authUserCancel(data) {
+
+// 角色取消授权用户
+export function revokeAuthUser(data) {
   return request({
-    url: '/system/role/authUser/cancel',
-    method: 'put',
+    url: '/system/role/revokeAuthUser',
+    method: 'post',
     data: data
   })
 }
 
-// 批量取消用户授权角色
-export function authUserCancelAll(data) {
+// 角色授权用户
+export function roleAuthUser(data) {
   return request({
-    url: '/system/role/authUser/cancelAll',
-    method: 'put',
-    params: data
-  })
-}
-
-// 授权用户选择
-export function authUserSelectAll(data) {
-  return request({
-    url: '/system/role/authUser/selectAll',
-    method: 'put',
-    params: data
+    url: '/system/role/roleAuthUser',
+    method: 'post',
+    data: data
   })
 }
 
