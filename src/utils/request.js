@@ -22,6 +22,13 @@ const service = axios.create({
 
 // request拦截器
 service.interceptors.request.use(config => {
+  // 1. 新增：判断是否为FormData类型（文件上传请求）
+  const isFormData = config.data instanceof FormData;
+  // 2. 仅对非FormData请求设置JSON格式
+  if (!isFormData) {
+    config.headers['Content-Type'] = 'application/json;charset=utf-8';
+  }
+  
   // 是否需要设置 token
   const isToken = (config.headers || {}).isToken === false
   // 是否需要防止数据重复提交

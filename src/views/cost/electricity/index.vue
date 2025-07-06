@@ -19,6 +19,10 @@
         <el-button type="success" plain icon="el-icon-edit" size="mini" :disabled="single" @click="handleUpdate"
           v-hasPermi="['']">修改</el-button>
       </el-col>
+      <!-- 导入按钮 -->
+      <el-col :span="2">
+        <el-button type="warning" plain icon="el-icon-upload2" size="mini" @click="openUploadDialog">导入数据</el-button>
+      </el-col>
     </el-row>
 
 
@@ -35,7 +39,7 @@
       @pagination="getList" />
 
 
-    <!-- 添加或修改角色配置对话框 -->
+    <!-- 添加或修改对话框 -->
     <el-dialog :title="title" :visible.sync="open" width="700px" append-to-body>
       <el-form ref="form" :model="form" :rules="rules" label-width="150px">
         <el-form-item label="生活时间" prop="lifeDate">
@@ -54,37 +58,59 @@
         <el-button @click="cancel">取 消</el-button>
       </div>
     </el-dialog>
+
+    <!-- 上传文件弹框（核心修改部分） -->
+    <el-dialog title="导入数据" :visible.sync="uploadDialogVisible" width="500px" append-to-body>
+      <div class="upload-container">
+        <!-- 上传区域提示 -->
+        <div class="upload-hint">
+          <p>请上传Excel格式的文件（.xlsx/.xls）</p>
+          <p class="text-muted">支持批量导入用电数据，文件大小不超过5MB</p>
+        </div>
+
+        <!-- 上传文件框 -->
+        <el-upload class="upload-area" action="#" :auto-upload="false" :on-change="handleFileChange"
+          :on-remove="handleFileRemove" :show-file-list="true" accept=".xlsx,.xls" :limit="1" ref="upload">
+          <div class="upload-box">
+            <i class="el-icon-upload el-icon-2x"></i>
+            <p>点击或拖拽文件到此处上传</p>
+          </div>
+        </el-upload>
+
+        <!-- 已选文件显示 -->
+        <div v-if="uploadFile" class="selected-file">
+          <el-tag type="info" closable @close="handleFileRemove">{{ uploadFile.name }}</el-tag>
+          <span class="file-size">{{ formatFileSize(uploadFile.size) }}</span>
+        </div>
+      </div>
+
+      <!-- 弹框底部按钮 -->
+      <div slot="footer">
+        <el-button @click="uploadDialogVisible = false">取消</el-button>
+        <el-button type="primary" @click="confirmUpload" :disabled="!uploadFile">上传</el-button>
+      </div>
+    </el-dialog>
   </div>
 </template>
 
 <script>
-import { pageQryElectricityCost, addElectricityCost, updElectricityCost } from '@/api/cost/electricity'
-
+import { pageQryElectricityCost, addElectricityCost, updElectricityCost, uploadElectricityCost } from '@/api/cost/electricity'
+import { Loading } from 'element-ui'
 
 export default {
   name: "Electricity",
   dicts: ['sys_normal_disable'],
   data() {
     return {
-      // 遮罩层
       loading: true,
-      // 选中数组
       ids: [],
-      // 非单个禁用
       single: true,
-      // 非多个禁用
       multiple: true,
-      // 显示搜索条件
       showSearch: true,
-      // 总条数
       total: 0,
-      // 角色表格数据
       roleList: [],
-      // 弹出层标题
       title: "",
-      // 是否显示弹出层
       open: false,
-      // 是否显示弹出层（数据权限）
       openDataScope: false,
       electricityCostList: [],
       queryParams: {
@@ -109,6 +135,8 @@ export default {
       },
       // 日期范围
       dateRange: [],
+      uploadDialogVisible: false, // 上传弹框显示状态
+      uploadFile: null, // 选中的文件对象
     };
   },
   created() {
@@ -121,23 +149,21 @@ export default {
         this.electricityCostList = response.data.list;
         this.total = response.data.total;
         this.loading = false;
-      }
-      );
+      });
     },
 
     /** 新增按钮操作 */
     handleAdd() {
       this.reset();
       this.open = true;
-      this.title = "添加角色";
+      this.title = "添加用电记录";
     },
     // 取消按钮
     cancel() {
       this.open = false;
       this.reset();
     },
-    /** 提交按钮 */
-    submitForm: function () {
+    submitForm() {
       this.$refs["form"].validate(valid => {
         if (valid) {
           if (this.form.id != undefined) {
@@ -182,13 +208,11 @@ export default {
         this.menuNodeAll = false,
         this.deptExpand = true,
         this.deptNodeAll = false,
-        // 初始化表单数据
         this.form = {
           id: undefined,
           lifeDate: '',
           pricePerKwh: '',
           totalKwh: '',
-          lifeDate: '',
           remark: ''
         };
       this.resetForm("form");
@@ -230,7 +254,128 @@ export default {
     handleDelete(row) {
     },
 
+    // 上传文件相关方法（新增）
+    /** 打开上传弹框 */
+    openUploadDialog() {
+      this.uploadDialogVisible = true;
+      // 每次打开弹框重置上传状态
+      this.$nextTick(() => {
+        this.$refs.upload.clearFiles();
+        this.uploadFile = null;
+      });
+    },
+
+    /** 处理文件选择 */
+    handleFileChange(file, fileList) {
+      // 只保留最新选择的文件
+      if (fileList.length > 1) {
+        fileList.splice(0, fileList.length - 1);
+      }
+      this.uploadFile = file.raw;
+    },
+
+    /** 移除已选文件 */
+    handleFileRemove() {
+      this.uploadFile = null;
+      this.$refs.upload.clearFiles();
+    },
+
+    /** 格式化文件大小 */
+    formatFileSize(size) {
+      if (size < 1024) {
+        return size + ' B';
+      } else if (size < 1048576) {
+        return (size / 1024).toFixed(2) + ' KB';
+      } else {
+        return (size / 1048576).toFixed(2) + ' MB';
+      }
+    },
+
+    /** 确认上传 */
+    confirmUpload() {
+      if (!this.uploadFile) {
+        this.$message.error('请选择要上传的文件');
+        return;
+      }
+
+      const loading = Loading.service({
+        lock: true,
+        text: '正在上传并处理文件...',
+        background: 'rgba(0, 0, 0, 0.7)'
+      });
+
+      // 创建FormData对象
+      const formData = new FormData();
+      formData.append('file', this.uploadFile);
+
+      // 调用封装的uploadElectricityCost方法，添加headers配置
+      uploadElectricityCost(formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data'  // 关键：显式设置请求头
+        }
+      }).then(response => {
+        loading.close();
+        this.$modal.msgSuccess(`上传成功`);
+        this.uploadDialogVisible = false;
+        this.getList();
+      }).catch(error => {
+        loading.close();
+        this.$message.error('上传失败: ' + (error.msg || '未知错误'));
+      });
+    }
   }
 }
-
 </script>
+
+<style scoped>
+/* 上传弹框样式 */
+.upload-container {
+  padding: 10px 0;
+}
+
+.upload-hint {
+  margin-bottom: 15px;
+  padding-left: 10px;
+}
+
+.text-muted {
+  color: #606266;
+  font-size: 12px;
+  margin-top: 5px;
+}
+
+.upload-area {
+  border: 1px dashed #c0ccda;
+  border-radius: 4px;
+  padding: 30px 20px;
+  text-align: center;
+  cursor: pointer;
+  transition: border-color 0.3s;
+}
+
+.upload-area:hover {
+  border-color: #409eff;
+}
+
+.upload-box {
+  color: #606266;
+}
+
+.upload-box p {
+  margin-top: 10px;
+  font-size: 14px;
+}
+
+.selected-file {
+  margin-top: 15px;
+  padding-left: 10px;
+  display: flex;
+  align-items: center;
+}
+
+.file-size {
+  margin-left: 10px;
+  color: #909399;
+  font-size: 12px;
+}
+</style>

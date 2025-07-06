@@ -23,3 +23,16 @@ export function updElectricityCost(data) {
     data: data
   })
 }
+
+export function uploadElectricityCost(data) {
+  return request({
+    url: '/system/electricityCost/upload',
+    method: 'post',
+    data: data,
+    headers: {
+      'Content-Type': 'multipart/form-data'  // 声明为多部分表单
+    },
+    transformRequest: [(data) => data]  //
+  })
+  
+}
