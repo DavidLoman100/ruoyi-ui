@@ -40,21 +40,21 @@
     <el-dialog :title="title" :visible.sync="open" width="700px" append-to-body>
       <el-form ref="form" :model="form" :rules="rules" label-width="100px">
         <el-row :gutter="20">
-          <el-col :span="12">
+          <el-col :span="15">
             <el-form-item label="字典编码" prop="dictCode">
               <el-input v-model="form.dictCode" placeholder="请输入字典编码" />
             </el-form-item>
           </el-col>
         </el-row>
         <el-row :gutter="20">
-          <el-col :span="12">
+          <el-col :span="15">
             <el-form-item label="字典名称" prop="dictName">
               <el-input v-model="form.dictName" placeholder="请输入字典名称" />
             </el-form-item>
           </el-col>
         </el-row>
         <el-row :gutter="20">
-          <el-col :span="12">
+          <el-col :span="20">
             <el-form-item label="备注">
               <el-input v-model="form.remark" type="textarea" placeholder="请输入内容" />
             </el-form-item>
@@ -76,15 +76,17 @@
             v-hasPermi="['']">新增</el-button>
         </el-col>
       </el-row>
-      <el-table v-loading="loading" :data="dictDetailList" >
+      <el-table v-loading="loading" :data="dictDetailList">
         <el-table-column label="id" prop="id" width="100" />
         <el-table-column label="字典类型" prop="dictValue" width="150" />
         <el-table-column label="字典名称" prop="dictLabel" width="150" />
         <el-table-column label="备注" prop="remark" width="200" />
         <el-table-column label="操作" width="150" align="center">
           <template #default="scope">
-            <el-button size="mini" type="success" plain circle="true" icon="el-icon-edit" @click="updDetail(scope.row)" title="修改" />
-            <el-button size="mini" type="danger" plain circle icon="el-icon-delete" @click="delDetail(scope.row)" title="删除" />
+            <el-button size="mini" type="success" plain circle icon="el-icon-edit" @click="updDetail(scope.row)"
+              title="修改" />
+            <el-button size="mini" type="danger" plain circle icon="el-icon-delete" @click="delDetail(scope.row)"
+              title="删除" />
           </template>
         </el-table-column>
       </el-table>
@@ -94,23 +96,23 @@
 
     <!-- 添加或修改字典详情 -->
     <el-dialog :title="detailTitle" :visible.sync="detailOptOpen" width="700px" append-to-body>
-      <el-form ref="form" :model="detailForm" :rules="detailRules" label-width="100px">
+      <el-form ref="form" :model="detailForm" :rules="detailRules" label-width="120px">
         <el-row :gutter="20">
-          <el-col :span="12">
+          <el-col :span="15">
             <el-form-item label="字典详情编码" prop="dictValue">
               <el-input v-model="detailForm.dictValue" placeholder="请输入字典详情编码" />
             </el-form-item>
           </el-col>
         </el-row>
         <el-row :gutter="20">
-          <el-col :span="12">
+          <el-col :span="15">
             <el-form-item label="字典详情名称" prop="dictLabel">
               <el-input v-model="detailForm.dictLabel" placeholder="请输入字典详情名称" />
             </el-form-item>
           </el-col>
         </el-row>
         <el-row :gutter="20">
-          <el-col :span="12">
+          <el-col :span="20">
             <el-form-item label="备注">
               <el-input v-model="detailForm.remark" type="textarea" placeholder="请输入内容" />
             </el-form-item>
@@ -175,12 +177,21 @@ export default {
       form: {},
       // 表单校验
       rules: {
-        lifeDate: [
-          { required: true, message: "生活时间不能为空", trigger: "blur" }
+        dictCode: [
+          { required: true, message: "字典编码不能为空", trigger: "blur" }
+        ],
+        dictName: [
+          { required: true, message: "字典名称不能为空", trigger: "blur" }
         ],
       },
       detailForm: {},
       detailRules: {
+        dictValue: [
+          { required: true, message: "字典详情编码不能为空", trigger: "blur" }
+        ],
+        dictLabel: [
+          { required: true, message: "字典详情名称不能为空", trigger: "blur" }
+        ],
       },
       dateRange: [],
       curdictCode: undefined,
@@ -325,15 +336,23 @@ export default {
     },
     resetDetailForm() {
       this.resetForm("detailForm");
+      this.detailForm = {
+        id: undefined,
+        dictCode: undefined,
+        dictValue: undefined,
+        dictLabel: undefined,
+        remark: undefined
+      }
     },
     addDetail() {
+      this.resetDetailForm();
       this.detailOptOpen = true;
       this.detailTitle = "添加字典详情";
     },
     updDetail(row) {
+      this.resetDetailForm();
       this.detailOptOpen = true;
       this.detailTitle = "编辑字典详情";
-      console.log('编辑的数据:', row);
       this.detailForm = row;
     },
     detailCancel() {
@@ -359,10 +378,9 @@ export default {
           }
         }
       })
-      this.resetDetailForm();
     },
-    
-    delDetail(row){
+
+    delDetail(row) {
       this.$modal.confirm(' 是否确认删除字典详情名称为"' + row.dictLabel + '"的数据项？').then(function () {
         return delDictDetail(row.id);
       }).then(() => {
