@@ -16,25 +16,27 @@
           v-hasPermi="['']">修改</el-button>
       </el-col>
       <el-col :span="1.5">
-        <el-button type="danger" plain icon="el-icon-delete" size="mini" :disabled="multiple" @click="handleDelete"
+        <el-button type="danger" plain icon="el-icon-delete" size="mini" :disabled="single" @click="handleDelete"
           v-hasPermi="['']">删除</el-button>
       </el-col>
-
     </el-row>
-
-
     <el-table v-loading="loading" :data="dictList" @selection-change="handleSelectionChange">
       <el-table-column type="selection" width="55" align="center" />
       <el-table-column label="id" prop="id" width="100" />
       <el-table-column label="字典类型" prop="dictCode" width="250" />
       <el-table-column label="字典名称" prop="dictName" width="250" />
       <el-table-column label="备注" prop="remark" width="250" />
+      <el-table-column label="操作" width="150" align="center">
+        <template #default="scope">
+          <el-button size="mini" type="text" icon="el-icon-setting" @click="handleDictDetail(scope.row)" title="配置" />
+        </template>
+      </el-table-column>
     </el-table>
     <pagination v-show="total > 0" :total="total" :page.sync="queryParams.pageNum" :limit.sync="queryParams.pageSize"
-      @pagination="getList" />
+      @pagination="getDictDetailList" />
 
 
-    <!-- 添加或修改角色配置对话框 -->
+    <!-- 添加或修改字典配置对话框 -->
     <el-dialog :title="title" :visible.sync="open" width="700px" append-to-body>
       <el-form ref="form" :model="form" :rules="rules" label-width="100px">
         <el-row :gutter="20">
@@ -44,7 +46,6 @@
             </el-form-item>
           </el-col>
         </el-row>
-
         <el-row :gutter="20">
           <el-col :span="12">
             <el-form-item label="字典名称" prop="dictName">
@@ -52,23 +53,80 @@
             </el-form-item>
           </el-col>
         </el-row>
-
-        <el-form-item label="备注">
-          <el-input v-model="form.remark" type="textarea" placeholder="请输入内容" />
-        </el-form-item>
+        <el-row :gutter="20">
+          <el-col :span="12">
+            <el-form-item label="备注">
+              <el-input v-model="form.remark" type="textarea" placeholder="请输入内容" />
+            </el-form-item>
+          </el-col>
+        </el-row>
       </el-form>
-
-            <div slot="footer" class="dialog-footer">
+      <div slot="footer" class="dialog-footer">
         <el-button type="primary" @click="submitForm">确 定</el-button>
         <el-button @click="cancel">取 消</el-button>
       </div>
+    </el-dialog>
 
+
+    <!-- 添加或修改字典详情配置对话框 -->
+    <el-dialog title="配置字典详情" :visible.sync="detailOpen" width="1000px" append-to-body>
+      <el-row :gutter="10" class="mb8">
+        <el-col :span="1.5">
+          <el-button type="primary" plain icon="el-icon-plus" size="mini" @click="addDetail"
+            v-hasPermi="['']">新增</el-button>
+        </el-col>
+      </el-row>
+      <el-table v-loading="loading" :data="dictDetailList" >
+        <el-table-column label="id" prop="id" width="100" />
+        <el-table-column label="字典类型" prop="dictValue" width="150" />
+        <el-table-column label="字典名称" prop="dictLabel" width="150" />
+        <el-table-column label="备注" prop="remark" width="200" />
+        <el-table-column label="操作" width="150" align="center">
+          <template #default="scope">
+            <el-button size="mini" type="success" plain circle="true" icon="el-icon-edit" @click="updDetail(scope.row)" title="修改" />
+            <el-button size="mini" type="danger" plain circle icon="el-icon-delete" @click="delDetail(scope.row)" title="删除" />
+          </template>
+        </el-table-column>
+      </el-table>
+      <pagination v-show="detailTotal > 0" :total="detailTotal" :page.sync="queryDetailParams.pageNum"
+        :limit.sync="queryDetailParams.pageSize" @pagination="getDictDetailList" />
+    </el-dialog>
+
+    <!-- 添加或修改字典详情 -->
+    <el-dialog :title="detailTitle" :visible.sync="detailOptOpen" width="700px" append-to-body>
+      <el-form ref="form" :model="detailForm" :rules="detailRules" label-width="100px">
+        <el-row :gutter="20">
+          <el-col :span="12">
+            <el-form-item label="字典详情编码" prop="dictValue">
+              <el-input v-model="detailForm.dictValue" placeholder="请输入字典详情编码" />
+            </el-form-item>
+          </el-col>
+        </el-row>
+        <el-row :gutter="20">
+          <el-col :span="12">
+            <el-form-item label="字典详情名称" prop="dictLabel">
+              <el-input v-model="detailForm.dictLabel" placeholder="请输入字典详情名称" />
+            </el-form-item>
+          </el-col>
+        </el-row>
+        <el-row :gutter="20">
+          <el-col :span="12">
+            <el-form-item label="备注">
+              <el-input v-model="detailForm.remark" type="textarea" placeholder="请输入内容" />
+            </el-form-item>
+          </el-col>
+        </el-row>
+      </el-form>
+      <div slot="footer" class="dialog-footer">
+        <el-button type="primary" @click="detailSubmitForm">确 定</el-button>
+        <el-button @click="detailCancel">取 消</el-button>
+      </div>
     </el-dialog>
   </div>
 </template>
 
 <script>
-import { pageQryDict, addDict, updDict} from '@/api/person/dict'
+import { pageQryDict, addDict, updDict, delDict, pageQryDictDetail, addDictDetail, updDictDetail, delDictDetail } from '@/api/person/dict'
 export default {
   name: "dictNew",
   dicts: ['sys_normal_disable'],
@@ -86,20 +144,32 @@ export default {
       showSearch: true,
       // 总条数
       total: 0,
+      detailTotal: 0,
       // 角色表格数据
       roleList: [],
       // 弹出层标题
       title: "",
+      detailTitle: "",
       // 是否显示弹出层
       open: false,
+      // 是否显示字典详情弹框
+      detailOpen: false,
+      // 字典详情新增和编辑弹框
+      detailOptOpen: false,
       // 是否显示弹出层（数据权限）
       openDataScope: false,
       dictList: [],
+      dictDetailList: [],
       queryParams: {
         pageNum: 1,
         pageSize: 10,
         startLifeDate: undefined,
         endLifeDate: undefined,
+      },
+      queryDetailParams: {
+        pageNum: 1,
+        pageSize: 10,
+        dictCode: undefined,
       },
       // 表单参数
       form: {},
@@ -109,8 +179,11 @@ export default {
           { required: true, message: "生活时间不能为空", trigger: "blur" }
         ],
       },
-      // 日期范围
+      detailForm: {},
+      detailRules: {
+      },
       dateRange: [],
+      curdictCode: undefined,
     };
   },
   created() {
@@ -142,9 +215,7 @@ export default {
     submitForm: function () {
       this.$refs["form"].validate(valid => {
         if (valid) {
-              console.log('执行修改操作前', updDict); 
           if (this.form.id != undefined) {
-              console.log('执行修改操作', updDict); 
             updDict(this.form).then(response => {
               this.$modal.msgSuccess("修改成功");
               this.open = false;
@@ -227,10 +298,80 @@ export default {
       this.title = "修改字典";
     },
     /** 删除按钮操作 */
-    handleDelete(row) {
+    handleDelete() {
+      const row = this.dictList.find(item => item.id === this.ids[0]);
+      const dictId = row.id;
+      this.$modal.confirm(' 是否确认删除字典名称为"' + row.dictName + '"的数据项？').then(function () {
+        return delDict(dictId);
+      }).then(() => {
+        this.getList();
+        this.$modal.msgSuccess("删除成功");
+      }).catch(() => { });
     },
 
+    getDictDetailList(dictCode) {
+      this.queryDetailParams.dictCode = dictCode;
+      pageQryDictDetail(this.queryDetailParams).then(response => {
+        this.dictDetailList = response.data.list;
+        this.detailTotal = response.data.total;
+        this.loading = false;
+      });
+    },
+    handleDictDetail(row) {
+      this.dictDetailList = [];
+      this.detailOpen = true;
+      this.curdictCode = row.dictCode;
+      this.getDictDetailList(row.dictCode)
+    },
+    resetDetailForm() {
+      this.resetForm("detailForm");
+    },
+    addDetail() {
+      this.detailOptOpen = true;
+      this.detailTitle = "添加字典详情";
+    },
+    updDetail(row) {
+      this.detailOptOpen = true;
+      this.detailTitle = "编辑字典详情";
+      console.log('编辑的数据:', row);
+      this.detailForm = row;
+    },
+    detailCancel() {
+      this.detailOptOpen = false;
+      this.resetDetailForm();
+    },
+    detailSubmitForm: function () {
+      this.$refs["form"].validate(valid => {
+        if (valid) {
+          if (this.detailForm.id != undefined) {
+            updDictDetail(this.detailForm).then(response => {
+              this.$modal.msgSuccess("修改成功");
+              this.detailOptOpen = false;
+              this.getDictDetailList(this.curdictCode);
+            });
+          } else {
+            this.detailForm.dictCode = this.curdictCode;
+            addDictDetail(this.detailForm).then(response => {
+              this.$modal.msgSuccess("新增成功");
+              this.detailOptOpen = false;
+              this.getDictDetailList(this.curdictCode);
+            })
+          }
+        }
+      })
+      this.resetDetailForm();
+    },
+    
+    delDetail(row){
+      this.$modal.confirm(' 是否确认删除字典详情名称为"' + row.dictLabel + '"的数据项？').then(function () {
+        return delDictDetail(row.id);
+      }).then(() => {
+        this.getDictDetailList();
+        this.$modal.msgSuccess("删除成功");
+      }).catch(() => { });
+    }
   }
+
 }
 
 </script>
