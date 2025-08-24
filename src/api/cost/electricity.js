@@ -8,6 +8,15 @@ export function pageQryElectricityCost(data) {
   })
 }
 
+
+export function electricityCostChart(data) {
+  return request({
+    url: '/system/electricityCost/chart/list',
+    method: 'post',
+    data: data
+  })
+}
+
 export function addElectricityCost(data) {
   return request({
     url: '/system/electricityCost/add',
