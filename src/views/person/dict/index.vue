@@ -320,8 +320,8 @@ export default {
       }).catch(() => { });
     },
 
-    getDictDetailList(dictCode) {
-      this.queryDetailParams.dictCode = dictCode;
+    getDictDetailList() {
+      this.queryDetailParams.dictCode = this.curdictCode;
       pageQryDictDetail(this.queryDetailParams).then(response => {
         this.dictDetailList = response.data.list;
         this.detailTotal = response.data.total;
