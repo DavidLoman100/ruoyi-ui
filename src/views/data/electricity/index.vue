@@ -2,75 +2,161 @@
   <div class="app-container electricity-page">
     <!-- 顶部统计卡片 -->
     <el-row :gutter="20" class="stats-row">
-      <el-col :xs="24" :sm="12">
-        <el-card shadow="hover" class="stat-card stat-card-gradient">
+      <el-col :xs="24" :sm="12" :lg="6">
+        <el-card shadow="hover" class="stat-card stat-card-primary">
           <div class="stat-card-content">
-            <div class="stat-icon">
-              <i class="el-icon-coin"></i>
+            <div class="stat-icon-wrap">
+              <div class="stat-icon pulse">
+                <i class="el-icon-coin"></i>
+              </div>
             </div>
             <div class="stat-info">
               <div class="stat-label">累计电费</div>
-              <div class="stat-value highlight">¥ {{ totalCost || '0.00' }}</div>
+              <div class="stat-value highlight">
+                <span class="currency">¥</span>{{ formatMoney(totalCost) }}
+              </div>
+              <div class="stat-trend" v-if="totalCost > 0">
+                <i class="el-icon-top-right"></i> 总支出
+              </div>
             </div>
           </div>
+          <div class="stat-decoration"></div>
         </el-card>
       </el-col>
-      <el-col :xs="24" :sm="12">
-        <el-card shadow="hover" class="stat-card stat-card-blue">
+      <el-col :xs="24" :sm="12" :lg="6">
+        <el-card shadow="hover" class="stat-card stat-card-success">
           <div class="stat-card-content">
-            <div class="stat-icon">
-              <i class="el-icon-trend-charts"></i>
+            <div class="stat-icon-wrap">
+              <div class="stat-icon">
+                <i class="el-icon-data-line"></i>
+              </div>
             </div>
             <div class="stat-info">
               <div class="stat-label">日均电费</div>
-              <div class="stat-value">¥ {{ avgCost || '0.00' }}</div>
+              <div class="stat-value">
+                <span class="currency">¥</span>{{ formatMoney(avgCost) }}
+              </div>
+              <div class="stat-trend success" v-if="avgCost > 0">
+                <i class="el-icon-s-data"></i> 平均值
+              </div>
             </div>
           </div>
+          <div class="stat-decoration"></div>
+        </el-card>
+      </el-col>
+      <el-col :xs="24" :sm="12" :lg="6">
+        <el-card shadow="hover" class="stat-card stat-card-warning">
+          <div class="stat-card-content">
+            <div class="stat-icon-wrap">
+              <div class="stat-icon">
+                <i class="el-icon-top"></i>
+              </div>
+            </div>
+            <div class="stat-info">
+              <div class="stat-label">最高电费</div>
+              <div class="stat-value">
+                <span class="currency">¥</span>{{ formatMoney(maxCost) }}
+              </div>
+              <div class="stat-trend warning" v-if="maxCostDate">
+                <i class="el-icon-date"></i> {{ maxCostDate }}
+              </div>
+            </div>
+          </div>
+          <div class="stat-decoration"></div>
+        </el-card>
+      </el-col>
+      <el-col :xs="24" :sm="12" :lg="6">
+        <el-card shadow="hover" class="stat-card stat-card-info">
+          <div class="stat-card-content">
+            <div class="stat-icon-wrap">
+              <div class="stat-icon">
+                <i class="el-icon-document"></i>
+              </div>
+            </div>
+            <div class="stat-info">
+              <div class="stat-label">用电天数</div>
+              <div class="stat-value">{{ dataCount || 0 }}
+                <span class="unit">天</span>
+              </div>
+              <div class="stat-trend info" v-if="dataCount > 0">
+                <i class="el-icon-s-order"></i> 记录数
+              </div>
+            </div>
+          </div>
+          <div class="stat-decoration"></div>
         </el-card>
       </el-col>
     </el-row>
 
     <!-- 搜索表单区域 -->
-    <el-card shadow="light" class="search-card">
-      <el-form :model="queryParams" ref="queryForm" size="small" :inline="true">
+    <el-card shadow="never" class="search-card">
+      <div class="search-header">
+        <span class="search-title">
+          <i class="el-icon-search"></i> 数据筛选
+        </span>
+      </div>
+      <el-form :model="queryParams" ref="queryForm" size="small" :inline="true" class="search-form">
         <el-form-item label="支出时间">
           <el-date-picker 
             v-model="dateRange" 
-            style="width: 240px" 
+            style="width: 260px" 
             value-format="yyyy-MM-dd" 
             type="daterange"
-            range-separator="-" 
+            range-separator="至" 
             start-placeholder="开始日期" 
             end-placeholder="结束日期"
             class="date-picker-custom"
           ></el-date-picker>
         </el-form-item>
-        <el-form-item>
-          <el-button class="quick-btn" @click="setDateRange('month')">本月</el-button>
-          <el-button class="quick-btn" @click="setDateRange('lastMonth')">最近一月</el-button>
-          <el-button class="quick-btn" @click="setDateRange('lastThreeMonths')">最近三月</el-button>
-          <el-button class="quick-btn" @click="setDateRange('year')">今年以来</el-button>
+        <el-form-item class="quick-btns">
+          <el-button-group>
+            <el-button size="small" :type="activeQuickBtn === 'month' ? 'primary' : ''" @click="setDateRange('month')">本月</el-button>
+            <el-button size="small" :type="activeQuickBtn === 'lastMonth' ? 'primary' : ''" @click="setDateRange('lastMonth')">最近一月</el-button>
+            <el-button size="small" :type="activeQuickBtn === 'lastThreeMonths' ? 'primary' : ''" @click="setDateRange('lastThreeMonths')">最近三月</el-button>
+            <el-button size="small" :type="activeQuickBtn === 'year' ? 'primary' : ''" @click="setDateRange('year')">今年以来</el-button>
+          </el-button-group>
         </el-form-item>
-        <el-form-item>
-          <el-button type="primary" class="filter-btn" @click="handleQuery">
-            <i class="el-icon-search"></i> 搜索
+        <el-form-item class="search-actions">
+          <el-button type="primary" class="filter-btn" @click="handleQuery" :loading="loading">
+            <i class="el-icon-search"></i> 查询
           </el-button>
           <el-button class="reset-btn" @click="resetQuery">
-            <i class="el-icon-refresh"></i> 重置
+            <i class="el-icon-refresh-right"></i> 重置
           </el-button>
         </el-form-item>
       </el-form>
     </el-card>
 
     <!-- 图表区域 -->
-    <el-card shadow="light" class="chart-card">
+    <el-card shadow="never" class="chart-card">
       <div slot="header" class="chart-header">
-        <span class="chart-title">
-          <i class="el-icon-data-line"></i> 电费趋势图
-        </span>
+        <div class="chart-title-wrap">
+          <span class="chart-title">
+            <i class="el-icon-data-line"></i> 电费趋势分析
+          </span>
+          <span class="chart-subtitle" v-if="currentData.length > 0">
+            共 {{ currentData.length }} 条数据记录
+          </span>
+        </div>
+        <div class="chart-actions">
+          <el-tooltip content="刷新数据" placement="top">
+            <el-button type="text" class="refresh-btn" @click="getList" :loading="loading">
+              <i class="el-icon-refresh" :class="{ 'is-loading': loading }"></i>
+            </el-button>
+          </el-tooltip>
+        </div>
       </div>
       <div class="chart-wrapper">
-        <div id="dynamic-chart" class="chart-container"></div>
+        <div v-if="loading" class="chart-loading">
+          <i class="el-icon-loading"></i>
+          <span>数据加载中...</span>
+        </div>
+        <div v-else-if="currentData.length === 0" class="chart-empty">
+          <i class="el-icon-data-analysis"></i>
+          <p>暂无数据</p>
+          <span>请选择其他时间范围或添加数据</span>
+        </div>
+        <div v-else id="dynamic-chart" class="chart-container"></div>
       </div>
     </el-card>
   </div>
@@ -106,6 +192,10 @@ export default {
       ],
       totalCost: undefined,
       avgCost: undefined,
+      maxCost: undefined,      // 最高电费
+      maxCostDate: undefined,  // 最高电费日期
+      dataCount: 0,            // 数据条数
+      activeQuickBtn: '',      // 当前激活的快捷按钮
       currentData: [], // 当前展示数据
     };
   },
@@ -114,11 +204,7 @@ export default {
     this.getList();  // 等字典加载完再拉列表
   },
   mounted() {
-    // 🔥 先初始化图表（只执行一次）
-    this.initChart();
-    // 再赋值 + 更新（若有接口数据，会覆盖默认值）
-    this.currentData = [...this.oriData];
-    this.updateChartData(this.currentData);
+    // 图表初始化移到 getList 中，等待数据加载完成后再初始化
   },
 
   beforeDestroy() {
@@ -129,74 +215,149 @@ export default {
     }
   },
   methods: {
-    // 初始化图表（只执行一次）
-    initChart() {
-      // 创建图表实例
+    // 初始化图表
+    initChart(data) {
+      // 检查容器是否存在
+      const container = document.getElementById('dynamic-chart');
+      if (!container) {
+        console.error('图表容器不存在');
+        return false;
+      }
+        
+      // 创建图表实例（带 tooltip 配置）
       this.chart = new Chart({
         container: 'dynamic-chart',
         autoFit: true,
-        height: 400
+        height: 420
       });
-
-      // 设置图表基础配置
+        
+      // 设置数据
+      this.chart.data(data);
+        
+      // 设置比例尺
       this.chart
+        .scale('x', { 
+          range: [0.02, 0.98],
+          padding: 0.05,
+          alias: '日期'
+        })
+        .scale('y', { 
+          domainMin: 0, 
+          nice: true,
+          alias: '金额（元）'
+        });
+            
+      // 设置坐标轴样式
+      this.chart.axis('x', {
+        title: '日期',
+        titleFontSize: 12,
+        titleFontColor: '#666',
+        tickLine: null,
+        line: {
+          style: {
+            stroke: '#e8e8e8',
+            lineWidth: 1
+          }
+        },
+        labelFormatter: (val) => val,
+        labelSpacing: 8
+      });
+            
+      this.chart.axis('y', {
+        title: '金额（元）',
+        titleFontSize: 12,
+        titleFontColor: '#666',
+        grid: {
+          line: {
+            style: {
+              stroke: '#f0f0f0',
+              lineWidth: 1,
+              lineDash: [4, 4]
+            }
+          }
+        },
+        labelFormatter: (val) => `¥${val}`,
+        labelSpacing: 8
+      });
+            
+      // 添加面积图（渐变效果）- 不显示tooltip
+      this.chart.area()
         .encode('x', 'lifeDate')
         .encode('y', 'cost')
-        .scale('x', { range: [0, 1] })
-        .scale('y', { domainMin: 0, nice: true });
-
-      // 添加折线和点
-      this.chart.line();
+        .style('fill', 'l(270) 0:#36cfc940 0.5:#1890ff20 1:#1890ff05')
+        .tooltip(false);
+            
+      // 添加折线（渐变色）- 不显示tooltip
+      this.chart.line()
+        .encode('x', 'lifeDate')
+        .encode('y', 'cost')
+        .style('stroke', '#1890ff')
+        .style('lineWidth', 3)
+        .style('lineCap', 'round')
+        .style('lineJoin', 'round')
+        .tooltip(false);
+            
+      // 添加数据点 - 只在数据点上显示tooltip
       this.chart.point()
-        .style('fill', 'white')
-        .tooltip(true);
-
-      // 首次渲染
-      this.updateChartData(this.currentData);
+        .encode('x', 'lifeDate')
+        .encode('y', 'cost')
+        .style('fill', '#fff')
+        .style('stroke', '#1890ff')
+        .style('lineWidth', 2.5)
+        .style('r', 6)
+        .tooltip({
+          title: (d) => d.lifeDate,
+          items: [
+            (d) => ({
+              name: '金额',
+              value: `¥${Number(d.cost).toFixed(2)}`
+            })
+          ]
+        });
+        
+      // 渲染图表
+      this.chart.render();
+      return true;
     },
 
-    // 更新图表数据（核心方法）
+    // 更新图表数据
     updateChartData(data) {
-      if (!this.chart) return;
-      
+      if (!this.chart) {
+        console.log('图表实例不存在');
+        return;
+      }
+          
+      if (!data || data.length === 0) {
+        console.log('没有数据可渲染');
+        return;
+      }
+          
       const dataLength = data.length;
-      
-      // 🔥 X 轴永远只显示固定位置：第一个、最后一个、中间均匀分布的 3-4 个
-      let labelCfg = {
-        autoRotate: false,               // 不自动旋转
-        autoHide: false,                 // 不自动隐藏
-        formatter: (val, idx) => {
-          // 数据量很少时全显示
-          if (dataLength <= 5) {
-            return val;
-          }
           
-          // 计算固定显示位置：首尾 + 中间 4 个等分点
-          const positions = [
-            0,                                    // 第一个
-            Math.floor(dataLength / 5),          // 1/5 位置
-            Math.floor(dataLength / 5 * 2),      // 2/5 位置
-            Math.floor(dataLength / 5 * 3),      // 3/5 位置
-            Math.floor(dataLength / 5 * 4),      // 4/5 位置
-            dataLength - 1                        // 最后一个
-          ];
+      // 计算需要显示的 X 轴标签位置
+      const labelPositions = dataLength <= 5 
+        ? Array.from({ length: dataLength }, (_, i) => i)  // 少量数据全显示
+        : [0, Math.floor(dataLength / 5), Math.floor(dataLength / 5 * 2), 
+           Math.floor(dataLength / 5 * 3), Math.floor(dataLength / 5 * 4), dataLength - 1];
           
-          // 在这个数组中的索引就显示
-          if (positions.includes(idx)) {
-            return val;
+      // 更新 X 轴标签显示
+      this.chart.axis('x', {
+        title: false,
+        tickLine: null,
+        line: {
+          style: {
+            stroke: '#e8e8e8',
+            lineWidth: 1
           }
-          return '';
         },
-        style: {
-          fill: '#aaa',
-          fontSize: 12,
-          fontWeight: 'bold'
-        }
-      };
-      
-      // 更新 X 轴配置
-      this.chart.axis('x', labelCfg);
-      
+        labelFormatter: (val, idx) => {
+          return labelPositions.includes(idx) ? val : '';
+        },
+        labelSpacing: 8,
+        labelAutoHide: false,
+        labelAutoRotate: false
+      });
+          
       // 更新数据并重新渲染
       this.chart.data(data);
       this.chart.render();
@@ -204,13 +365,43 @@ export default {
 
     getList() {
       this.loading = true;
+      // 销毁旧的图表实例（因为 loading 状态会切换，导致容器被销毁）
+      if (this.chart) {
+        this.chart.destroy();
+        this.chart = null;
+      }
       electricityCostChart(this.queryParams).then(response => {
-        this.oriData = response.data.ecVoList;
+        this.oriData = response.data.ecVoList || [];
         this.totalCost = response.data.totalCost;
         this.avgCost = response.data.avgCost;
         this.currentData = [...this.oriData];
+        this.dataCount = this.oriData.length;
+                
+        // 计算最高电费
+        if (this.oriData.length > 0) {
+          const maxItem = this.oriData.reduce((max, item) => 
+            (item.cost > max.cost) ? item : max, this.oriData[0]);
+          this.maxCost = maxItem.cost;
+          this.maxCostDate = maxItem.lifeDate;
+        } else {
+          this.maxCost = 0;
+          this.maxCostDate = '';
+        }
+                
         this.loading = false;
-        this.updateChartData(this.currentData); // 直接更新数据
+                    
+        // 等待 DOM 更新后再初始化/更新图表
+        this.$nextTick(() => {
+          if (this.currentData.length > 0) {
+            if (!this.chart) {
+              this.initChart(this.currentData);
+            } else {
+              this.updateChartData(this.currentData);
+            }
+          }
+        });
+      }).catch(() => {
+        this.loading = false;
       });
     },
     /** 搜索按钮操作 */
@@ -222,6 +413,7 @@ export default {
     /** 重置按钮操作 */
     resetQuery() {
       this.dateRange = [];
+      this.activeQuickBtn = '';
       this.resetForm("queryForm");
       this.handleQuery();
     },
@@ -275,8 +467,17 @@ export default {
         return `${year}-${month}-${day}`;
       };
       this.dateRange = [formatDate(start), formatDate(end)];
+      this.activeQuickBtn = type;  // 设置当前激活的按钮
       // 自动触发搜索
       this.handleQuery();
+    },
+    
+    // 格式化金额
+    formatMoney(value) {
+      if (value === undefined || value === null) return '0.00';
+      const num = Number(value);
+      if (isNaN(num)) return '0.00';
+      return num.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
     }
   }
 
@@ -286,7 +487,7 @@ export default {
 <style scoped>
 /* 页面整体布局 */
 .electricity-page {
-  background: #f5f7fa;
+  background: linear-gradient(135deg, #f5f7fa 0%, #e4e8ec 100%);
   min-height: calc(100vh - 84px);
   padding: 20px;
 }
@@ -297,24 +498,36 @@ export default {
 }
 
 .stat-card {
-  border-radius: 12px;
+  border-radius: 16px;
   overflow: hidden;
-  transition: all 0.3s ease;
+  transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
   cursor: pointer;
+  position: relative;
+  border: none;
 }
 
 .stat-card:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
+  transform: translateY(-8px) scale(1.02);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
 }
 
-.stat-card-gradient {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+.stat-card-primary {
+  background: linear-gradient(135deg, #1890ff 0%, #36cfc9 100%);
   color: white;
 }
 
-.stat-card-blue {
-  background: linear-gradient(135deg, #2193b0 0%, #6dd5ed 100%);
+.stat-card-success {
+  background: linear-gradient(135deg, #52c41a 0%, #95de64 100%);
+  color: white;
+}
+
+.stat-card-warning {
+  background: linear-gradient(135deg, #fa8c16 0%, #ffc53d 100%);
+  color: white;
+}
+
+.stat-card-info {
+  background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
   color: white;
 }
 
@@ -322,115 +535,226 @@ export default {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 10px;
+  padding: 20px;
+  position: relative;
+  z-index: 1;
+}
+
+.stat-decoration {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: rgba(255, 255, 255, 0.3);
+}
+
+.stat-icon-wrap {
+  flex-shrink: 0;
 }
 
 .stat-icon {
-  font-size: 48px;
-  opacity: 0.8;
-  width: 80px;
-  height: 80px;
+  font-size: 32px;
+  width: 64px;
+  height: 64px;
   display: flex;
   align-items: center;
   justify-content: center;
   background: rgba(255, 255, 255, 0.2);
-  border-radius: 50%;
+  border-radius: 16px;
+  backdrop-filter: blur(10px);
+}
+
+.stat-icon.pulse {
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.4);
+  }
+  70% {
+    box-shadow: 0 0 0 15px rgba(255, 255, 255, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(255, 255, 255, 0);
+  }
 }
 
 .stat-info {
   flex: 1;
   text-align: right;
-  padding-right: 20px;
+  padding-right: 10px;
 }
 
 .stat-label {
-  font-size: 14px;
+  font-size: 13px;
   opacity: 0.9;
   margin-bottom: 8px;
   font-weight: 500;
+  letter-spacing: 1px;
 }
 
 .stat-value {
-  font-size: 28px;
+  font-size: 26px;
   font-weight: bold;
   font-family: 'DIN Alternate', 'Arial', sans-serif;
+  display: flex;
+  align-items: baseline;
+  justify-content: flex-end;
+}
+
+.stat-value .currency {
+  font-size: 16px;
+  margin-right: 2px;
+  opacity: 0.8;
+}
+
+.stat-value .unit {
+  font-size: 14px;
+  margin-left: 4px;
+  opacity: 0.8;
+  font-weight: normal;
 }
 
 .stat-value.highlight {
   color: #ffeb3b;
-  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+}
+
+.stat-trend {
+  font-size: 12px;
+  opacity: 0.85;
+  margin-top: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+}
+
+.stat-trend i {
+  margin-right: 4px;
 }
 
 /* 搜索卡片区 */
 .search-card {
   margin-bottom: 20px;
-  border-radius: 8px;
+  border-radius: 16px;
+  border: none;
+  background: white;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+}
+
+.search-header {
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.search-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: #303133;
+  display: flex;
+  align-items: center;
+}
+
+.search-title i {
+  margin-right: 8px;
+  color: #667eea;
 }
 
 .search-card >>> .el-card__body {
-  padding: 18px;
+  padding: 20px;
+}
+
+.search-form {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
 }
 
 .date-picker-custom {
-  border-radius: 4px;
+  border-radius: 8px;
 }
 
-.quick-btn {
-  background: #ecf5ff;
-  color: #409EFF;
-  border: 1px solid #d9ecff;
-  margin-right: 8px;
-  border-radius: 4px;
+.quick-btns {
+  margin-left: 20px;
+}
+
+.quick-btns .el-button-group {
+  display: flex;
+}
+
+.quick-btns .el-button {
+  border-radius: 0;
   transition: all 0.3s ease;
 }
 
-.quick-btn:hover {
-  background: #409EFF;
-  color: white;
-  border-color: #409EFF;
-  transform: translateY(-2px);
+.quick-btns .el-button:first-child {
+  border-radius: 8px 0 0 8px;
+}
+
+.quick-btns .el-button:last-child {
+  border-radius: 0 8px 8px 0;
+}
+
+.search-actions {
+  margin-left: auto;
 }
 
 .filter-btn {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #1890ff 0%, #36cfc9 100%);
   border: none;
-  border-radius: 4px;
-  padding: 8px 20px;
-  margin-right: 8px;
+  border-radius: 8px;
+  padding: 9px 24px;
+  margin-right: 10px;
   transition: all 0.3s ease;
+  font-weight: 500;
 }
 
 .filter-btn:hover {
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+  box-shadow: 0 8px 20px rgba(24, 144, 255, 0.4);
 }
 
 .reset-btn {
-  border-radius: 4px;
-  padding: 8px 20px;
+  border-radius: 8px;
+  padding: 9px 24px;
   transition: all 0.3s ease;
+  border: 1px solid #dcdfe6;
 }
 
 .reset-btn:hover {
+  color: #667eea;
+  border-color: #667eea;
   transform: translateY(-2px);
 }
 
 /* 图表卡片区 */
 .chart-card {
-  border-radius: 12px;
+  border-radius: 16px;
   overflow: hidden;
+  border: none;
+  background: white;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
 }
 
 .chart-card >>> .el-card__header {
-  background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
   padding: 16px 20px;
-  border-bottom: none;
+  border-bottom: 1px solid #f0f0f0;
 }
 
 .chart-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
+}
+
+.chart-title-wrap {
+  display: flex;
+  align-items: center;
+  gap: 12px;
 }
 
 .chart-title {
@@ -447,10 +771,74 @@ export default {
   font-size: 18px;
 }
 
+.chart-subtitle {
+  font-size: 12px;
+  color: #909399;
+  background: #f4f4f5;
+  padding: 4px 10px;
+  border-radius: 12px;
+}
+
+.chart-actions {
+  display: flex;
+  align-items: center;
+}
+
+.refresh-btn {
+  font-size: 18px;
+  color: #909399;
+  transition: all 0.3s ease;
+}
+
+.refresh-btn:hover {
+  color: #667eea;
+  transform: rotate(180deg);
+}
+
+.refresh-btn .is-loading {
+  animation: rotating 1s linear infinite;
+}
+
+@keyframes rotating {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
 .chart-wrapper {
-  padding: 10px;
-  background: #fafafa;
-  border-radius: 8px;
+  padding: 20px;
+  background: #fafbfc;
+  min-height: 500px;
+}
+
+.chart-loading,
+.chart-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 400px;
+  color: #909399;
+}
+
+.chart-loading i,
+.chart-empty i {
+  font-size: 48px;
+  margin-bottom: 16px;
+  color: #c0c4cc;
+}
+
+.chart-loading span {
+  font-size: 14px;
+}
+
+.chart-empty p {
+  font-size: 16px;
+  margin: 0 0 8px 0;
+  color: #606266;
+}
+
+.chart-empty span {
+  font-size: 12px;
 }
 
 .chart-container {
@@ -458,11 +846,27 @@ export default {
   min-height: 450px;
   background: white;
   padding: 20px;
-  border-radius: 8px;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.05);
+  border-radius: 12px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04);
 }
 
 /* 响应式设计 */
+@media (max-width: 1200px) {
+  .stat-card-content {
+    padding: 15px;
+  }
+  
+  .stat-icon {
+    width: 50px;
+    height: 50px;
+    font-size: 24px;
+  }
+  
+  .stat-value {
+    font-size: 22px;
+  }
+}
+
 @media (max-width: 768px) {
   .electricity-page {
     padding: 10px;
@@ -471,10 +875,11 @@ export default {
   .stat-card-content {
     flex-direction: column;
     text-align: center;
+    padding: 15px;
   }
   
-  .stat-icon {
-    margin-bottom: 15px;
+  .stat-icon-wrap {
+    margin-bottom: 10px;
   }
   
   .stat-info {
@@ -483,7 +888,31 @@ export default {
   }
   
   .stat-value {
-    font-size: 24px;
+    font-size: 20px;
+    justify-content: center;
+  }
+  
+  .stat-trend {
+    justify-content: center;
+  }
+  
+  .search-form {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .quick-btns {
+    margin-left: 0;
+    margin-top: 10px;
+  }
+  
+  .quick-btns .el-button-group {
+    flex-wrap: wrap;
+  }
+  
+  .search-actions {
+    margin-left: 0;
+    margin-top: 10px;
   }
 }
 
@@ -491,7 +920,7 @@ export default {
 @keyframes fadeInUp {
   from {
     opacity: 0;
-    transform: translateY(20px);
+    transform: translateY(30px);
   }
   to {
     opacity: 1;
@@ -499,17 +928,26 @@ export default {
   }
 }
 
-.stat-card,
-.search-card,
-.chart-card {
-  animation: fadeInUp 0.5s ease forwards;
+.stat-card {
+  animation: fadeInUp 0.6s ease forwards;
+  opacity: 0;
 }
 
 .search-card {
+  animation: fadeInUp 0.6s ease forwards;
   animation-delay: 0.1s;
+  opacity: 0;
 }
 
 .chart-card {
+  animation: fadeInUp 0.6s ease forwards;
   animation-delay: 0.2s;
+  opacity: 0;
 }
+
+/* 为每个卡片设置不同的动画延迟 */
+.stats-row .el-col:nth-child(1) .stat-card { animation-delay: 0s; }
+.stats-row .el-col:nth-child(2) .stat-card { animation-delay: 0.05s; }
+.stats-row .el-col:nth-child(3) .stat-card { animation-delay: 0.1s; }
+.stats-row .el-col:nth-child(4) .stat-card { animation-delay: 0.15s; }
 </style>
