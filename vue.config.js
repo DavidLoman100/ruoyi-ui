@@ -1,5 +1,6 @@
 'use strict'
 const path = require('path')
+const Agent = require('agentkeepalive')
 
 function resolve(dir) {
   return path.join(__dirname, dir)
@@ -40,7 +41,14 @@ module.exports = {
         changeOrigin: true,
         pathRewrite: {
           ['^' + process.env.VUE_APP_BASE_API]: ''
-        }
+        },
+        // 启用 keepAlive 解决快慢交替问题
+        agent: new Agent({
+          maxSockets: 100,          // 最大并发连接数
+          maxFreeSockets: 10,       // 最大空闲连接数
+          timeout: 60000,           // 连接超时时间 60s
+          freeSocketTimeout: 30000  // 空闲连接超时时间 30s
+        })
       }
     },
     disableHostCheck: true
