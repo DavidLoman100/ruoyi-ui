@@ -96,7 +96,7 @@
 
 <script>
 import { pageQryLargeCost, addLargeCost, updLargeCost, delLargeCost } from '@/api/cost/large'
-import { getDictDetail } from '@/api/person/dict'
+import { getDictDetail } from '@/api/base/dict'
 
 export default {
   name: "Electricity",

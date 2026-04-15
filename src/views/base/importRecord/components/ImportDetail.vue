@@ -82,7 +82,7 @@
 
 <script>
 import { getImportRecord, listImportDetail } from '@/api/file/importRecord'
-import { getDictDetail } from '@/api/person/dict'
+import { getDictDetail } from '@/api/base/dict'
 
 export default {
   name: 'ImportDetail',

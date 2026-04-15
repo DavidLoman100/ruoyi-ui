@@ -138,7 +138,7 @@
 
 <script>
 import { listImportRecord, getOssSignWithCache } from '@/api/file/importRecord'
-import { getDictDetail } from '@/api/person/dict'
+import { getDictDetail } from '@/api/base/dict'
 import ImportDetail from './components/ImportDetail'
 
 export default {
