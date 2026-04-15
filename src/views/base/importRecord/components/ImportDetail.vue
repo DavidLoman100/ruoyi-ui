@@ -117,9 +117,9 @@ export default {
       this.importId = importId
       this.visible = true
       this.detailQueryParams.importId = importId
+      this.loadDicts()
       this.getRecordDetail()
       this.getDetailList()
-      this.loadDicts()
     },
     /** 加载字典数据 */
     loadDicts() {

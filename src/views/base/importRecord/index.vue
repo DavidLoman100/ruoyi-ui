@@ -186,8 +186,8 @@ export default {
     }
   },
   created() {
-    this.getList()
     this.loadDicts()
+    this.getList()
   },
   methods: {
     /** 加载字典数据 */
