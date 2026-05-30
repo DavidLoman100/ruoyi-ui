@@ -1,51 +1,35 @@
-# 音色模板模块设计文档
+# 音色模板设计文档
 
-> 文档来源：`VoiceTemplateController` + `AudioVoiceTemplateService`
 > 更新时间：2026-05-30
-> 模块：`dv-audio`
+> 模块：dv-audio
 
-## 1. 设计目标
-提供“角色 -> AI音色编码”的模板化配置能力，支持新增、编辑、查询与音色列表下发。
+## 设计结论
+模板配置统一采用“多角色映射保存”模式：
+- 一次提交一个模板的全部角色映射
+- 单角色模板同样通过 `save` 提交（`mappings` 仅 1 条）
 
-## 2. 核心数据模型
-- 主表：`audio_voice_template`
-- 明细表：`audio_voice_template_item`
-- 关联关系：主表 `id` 对应明细表 `template_id`
+## 接口
+1. `POST /voice/template/save`
+- 新增/编辑模板
+- 保存多角色映射（全量替换）
 
-## 3. 接口职责划分
-- `POST /voice/template/add`：仅新增映射
-- `POST /voice/template/edit`：仅编辑映射
-- `GET /voice/template/roles`：查询可选音色
-- `GET /voice/template`：查询模板+映射明细
+2. `POST /voice/template/del/{templateId}`
+- 删除模板（级联删明细）
 
-## 4. 关键业务规则
-1. `speakerCode` 必须在 `DoubaoVoice20Enum` 支持范围内。
-2. 新增接口不做更新：同 `templateName + roleName` 已存在时直接报错。
-3. 编辑接口按 `id` 更新，`id` 不存在时报错。
-4. 编辑角色名时，同模板下角色名不能重复。
+3. `GET /voice/template/roles`
+- 查询可选音色
 
-## 5. 异常规范
-模板服务统一抛出 `BizException(AudioErrorEnum)`：
-- `12001` 参数校验异常
-- `12002` 角色音色映射已存在
-- `12003` 角色音色映射不存在
-- `12004` 模板下角色名已存在
+4. `GET /voice/template`
+- 查询模板列表及映射明细
 
-## 6. 网关接入
-网关已新增 `dv-audio` 路由：
+## 关键约束
+- `mappings` 非空
+- `speakerCode` 必须在 `DoubaoVoice20Enum` 支持范围
+- 同模板内 `roleName` 不重复
+- 模板名全局唯一（编辑时排除自身）
 
-```yaml
-- id: dv-audio
-  uri: lb://dv-audio
-  predicates:
-    - Path=/audio/**
-  filters:
-    - StripPrefix=1
-```
+## 异常规范
+统一抛 `BizException(AudioErrorEnum)`。
 
-前端通过网关调用：`/audio/voice/template/**`。
-
-## 7. 后续建议
-1. 增加模板删除接口（含明细清理策略）。
-2. 增加映射删除接口。
-3. 在接口文档中补充完整错误响应示例。
+## 网关
+前端统一走：`/audio/voice/template/**`
