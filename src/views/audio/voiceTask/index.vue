@@ -194,6 +194,14 @@
         :closable="false"
         class="segment-tip"
       />
+      <div class="segment-stats-bar">
+        <span class="segment-stats-title">状态统计</span>
+        <span class="segment-stats-item">总数 {{ segmentStatusStats.total }}</span>
+        <span class="segment-stats-item">待处理 {{ segmentStatusStats.pending }}</span>
+        <span class="segment-stats-item">运行中 {{ segmentStatusStats.running }}</span>
+        <span class="segment-stats-item">成功 {{ segmentStatusStats.success }}</span>
+        <span class="segment-stats-item">失败 {{ segmentStatusStats.failed }}</span>
+      </div>
       <div class="segment-table-wrap">
         <el-table v-loading="segmentsLoading" :data="segmentList" border size="mini" class="segment-table">
           <el-table-column label="#" width="55" align="center" type="index" />
@@ -424,6 +432,23 @@ export default {
     },
     failedCount() {
       return this.taskList.filter(item => item.status === 'FAILED').length
+    },
+    segmentStatusStats() {
+      const stats = {
+        total: this.segmentList.length,
+        pending: 0,
+        running: 0,
+        success: 0,
+        failed: 0
+      }
+      this.segmentList.forEach(item => {
+        const status = (item && item.status) || ''
+        if (status === 'PENDING') stats.pending += 1
+        else if (status === 'RUNNING') stats.running += 1
+        else if (status === 'SUCCESS') stats.success += 1
+        else if (status === 'FAILED') stats.failed += 1
+      })
+      return stats
     }
   },
   created() {
@@ -917,6 +942,28 @@ export default {
 
 .segment-tip {
   margin-bottom: 10px;
+}
+
+.segment-stats-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 8px;
+  font-size: 12px;
+  color: #5f6f85;
+}
+
+.segment-stats-title {
+  color: #3f526b;
+  font-weight: 600;
+}
+
+.segment-stats-item {
+  padding: 1px 7px;
+  line-height: 18px;
+  border-radius: 9px;
+  background: #f3f6fb;
+  border: 1px solid #e6edf7;
 }
 
 .segment-table-wrap {
