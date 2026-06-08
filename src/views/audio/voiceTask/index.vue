@@ -41,6 +41,14 @@
             @keyup.enter.native="handleQuery"
           />
         </el-form-item>
+        <el-form-item label="任务名称" prop="taskName">
+          <el-input
+            v-model="queryParams.taskName"
+            placeholder="请输入任务名称"
+            clearable
+            @keyup.enter.native="handleQuery"
+          />
+        </el-form-item>
         <el-form-item label="任务状态" prop="status">
           <el-select v-model="queryParams.status" placeholder="请选择任务状态" clearable style="width: 170px;">
             <el-option v-for="item in taskStatusOptions" :key="item.value" :label="item.label" :value="item.value" />
@@ -74,6 +82,7 @@
             {{ (queryParams.pageNum - 1) * queryParams.pageSize + scope.$index + 1 }}
           </template>
         </el-table-column>
+        <el-table-column prop="taskName" label="任务名称" min-width="180" show-overflow-tooltip />
         <el-table-column prop="taskNo" label="任务编号" min-width="230" show-overflow-tooltip />
         <el-table-column prop="templateId" label="模板ID" width="100" align="center" />
         <el-table-column label="任务状态" width="120" align="center">
@@ -135,6 +144,15 @@
 
     <el-dialog title="新建音频任务" :visible.sync="createOpen" width="820px" append-to-body>
       <el-form ref="createForm" :model="createForm" :rules="createRules" label-width="90px">
+        <el-form-item label="任务名称" prop="taskName">
+          <el-input
+            v-model="createForm.taskName"
+            placeholder="请输入任务名称，留空时服务端自动生成"
+            clearable
+            maxlength="100"
+            show-word-limit
+          />
+        </el-form-item>
         <el-form-item label="模板" prop="templateId">
           <el-select v-model="createForm.templateId" filterable clearable placeholder="请选择音色模板" style="width: 100%;">
             <el-option
@@ -164,6 +182,7 @@
     <el-dialog title="任务详情" :visible.sync="detailOpen" width="760px" append-to-body>
       <el-descriptions v-if="detailData" border :column="2" size="small">
         <el-descriptions-item label="任务ID">{{ detailData.taskId || '-' }}</el-descriptions-item>
+        <el-descriptions-item label="任务名称">{{ detailData.taskName || '-' }}</el-descriptions-item>
         <el-descriptions-item label="任务编号">{{ detailData.taskNo || '-' }}</el-descriptions-item>
         <el-descriptions-item label="模板ID">{{ detailData.templateId || '-' }}</el-descriptions-item>
         <el-descriptions-item label="任务状态">
@@ -291,6 +310,7 @@
     <el-dialog title="任务结果" :visible.sync="resultOpen" width="860px" append-to-body>
       <el-descriptions v-if="resultData" border :column="2" size="small">
         <el-descriptions-item label="任务ID">{{ resultData.taskId || '-' }}</el-descriptions-item>
+        <el-descriptions-item label="任务名称">{{ resultData.taskName || '-' }}</el-descriptions-item>
         <el-descriptions-item label="任务编号">{{ resultData.taskNo || '-' }}</el-descriptions-item>
         <el-descriptions-item label="模板ID">{{ resultData.templateId || '-' }}</el-descriptions-item>
         <el-descriptions-item label="任务状态">
@@ -389,9 +409,11 @@ export default {
         pageSize: 10,
         status: undefined,
         templateId: undefined,
-        taskNo: undefined
+        taskNo: undefined,
+        taskName: undefined
       },
       createForm: {
+        taskName: undefined,
         templateId: undefined,
         rawText: undefined
       },
@@ -467,6 +489,7 @@ export default {
       if (!params.status) delete params.status
       if (!params.templateId) delete params.templateId
       if (!params.taskNo) delete params.taskNo
+      if (!params.taskName) delete params.taskName
       pageVoiceTasks(params)
         .then(res => {
           const page = res.data || {}
@@ -488,7 +511,8 @@ export default {
         pageSize: 10,
         status: undefined,
         templateId: undefined,
-        taskNo: undefined
+        taskNo: undefined,
+        taskName: undefined
       }
       this.getList()
     },
@@ -498,6 +522,7 @@ export default {
     },
     resetCreateForm() {
       this.createForm = {
+        taskName: undefined,
         templateId: undefined,
         rawText: undefined
       }
@@ -508,14 +533,17 @@ export default {
         if (!valid) return
         this.createLoading = true
         const payload = {
+          taskName: (this.createForm.taskName || '').trim(),
           templateId: this.createForm.templateId,
           rawText: (this.createForm.rawText || '').trim()
         }
+        if (!payload.taskName) delete payload.taskName
         createVoiceTask(payload)
           .then(res => {
             const task = (res && res.data) || {}
+            const taskNameText = task.taskName ? `，任务名称：${task.taskName}` : ''
             const taskNoText = task.taskNo ? `，任务编号：${task.taskNo}` : ''
-            this.$modal.msgSuccess(`创建成功，任务ID：${task.taskId || '-'}${taskNoText}`)
+            this.$modal.msgSuccess(`创建成功，任务ID：${task.taskId || '-'}${taskNameText}${taskNoText}`)
             this.createOpen = false
             this.resetCreateForm()
             this.queryParams.pageNum = 1
@@ -714,7 +742,7 @@ export default {
     },
     handleRetry(row) {
       this.$modal
-        .confirm(`确认重试任务“${row.taskNo}”的失败片段吗？`)
+        .confirm(`确认重试任务“${this.getTaskDisplayName(row)}”的失败片段吗？`)
         .then(() => retryVoiceTask(row.taskId))
         .then(() => {
           this.$modal.msgSuccess('已触发失败片段重试')
@@ -724,7 +752,7 @@ export default {
     },
     handleRetryAll(row) {
       this.$modal
-        .confirm(`确认重新合成任务“${row.taskNo}”的音频吗？`)
+        .confirm(`确认重新合成任务“${this.getTaskDisplayName(row)}”的音频吗？`)
         .then(() => resynthesizeVoiceTask(row.taskId))
         .then(() => {
           this.$modal.msgSuccess('已触发重新合成音频')
@@ -734,7 +762,7 @@ export default {
     },
     handleCancel(row) {
       this.$modal
-        .confirm(`确认取消任务“${row.taskNo}”吗？`)
+        .confirm(`确认取消任务“${this.getTaskDisplayName(row)}”吗？`)
         .then(() => cancelVoiceTask(row.taskId))
         .then(() => {
           this.$modal.msgSuccess('取消成功')
@@ -744,7 +772,7 @@ export default {
     },
     handleDelete(row) {
       this.$modal
-        .confirm(`确认删除任务“${row.taskNo}”吗？`)
+        .confirm(`确认删除任务“${this.getTaskDisplayName(row)}”吗？`)
         .then(() => deleteVoiceTask(row.taskId))
         .then(() => {
           this.$modal.msgSuccess('删除成功')
@@ -755,6 +783,9 @@ export default {
     taskStatusLabel(status) {
       const target = this.taskStatusOptions.find(item => item.value === status)
       return target ? target.label : status || '-'
+    },
+    getTaskDisplayName(row) {
+      return (row && (row.taskName || row.taskNo || row.taskId)) || '-'
     },
     taskStatusTagType(status) {
       if (status === 'SUCCESS') return 'success'

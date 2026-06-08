@@ -3,7 +3,8 @@
 ## File Operation Boundary (Hard Constraint)
 
 - Never create, modify, delete, or rename any file outside these directories:
-  `E:\WorkSoftWare\VsCodeSpace\ruoyi\ruoyi-ui`
+  - `E:\WorkSoftWare\VsCodeSpace\ruoyi\ruoyi-ui`
+  - `C:\Work\worksoftware\vueProject\ruoyi-ui`
 - This boundary includes only the directories above and all of their subdirectories.
 - If any operation outside this boundary is truly required, the agent must ask the user first and wait for explicit approval before proceeding.
 
